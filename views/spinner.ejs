@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tip Spinner</title>
+    <style>
+        .spin {
+            animation: spin 4s linear infinite;
+            }
+
+            @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+            }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const coffeeImage = document.getElementById('coffeeImage');
+            const eventSource = new EventSource('/events');
+            eventSource.onmessage = (event) => {
+                coffeeImage.classList.add('spin');
+
+                coffeeImage.addEventListener('transitionend', () => {
+                    coffeeImage.classList.remove('spin');
+                }, { once: true });
+
+            };
+
+            // coffeeImage.addEventListener('click', () => {
+            //     console.log('click')
+            //     coffeeImage.classList.add('spin');
+
+            //     coffeeImage.addEventListener('transitionend', () => {
+            //         coffeeImage.classList.remove('spin');
+            //     }, { once: true });
+
+            // })
+        });
+    </script>
+</head>
+<body>
+    <div id="output">
+        <img id="coffeeImage" src="Red_Bicycle_Coffee.png" alt="Coffee">
+        <p>Spin me at <%= lnAddress %></p>
+    </div>
+</body>
+</html>
