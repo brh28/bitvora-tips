@@ -1,52 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tip Spinner</title>
     <style>
-        .spin {
-            animation: spin 4s linear infinite;
-            }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+      }
 
-            @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-            }
+      #output {
+        text-align: center;
+      }
+
+      #coffeeImage {
+        width: 150px;
+        height: auto;
+      }
+
+      .spin {
+        animation: spin 4s linear;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      #qrCode {
+        width: 150px;
+        height: 150px;
+        margin-top: 10px;
+      }
+
+      #tipMessage {
+        font-size: 1.2em;
+        margin: 10px 0;
+      }
+
+      #message {
+        margin-top: 20px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .hidden {
+        display: none;
+      }
     </style>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const coffeeImage = document.getElementById('coffeeImage');
-            const eventSource = new EventSource('/events');
-            eventSource.onmessage = (event) => {
-                coffeeImage.classList.add('spin');
+      document.addEventListener("DOMContentLoaded", () => {
+        const coffeeImage = document.getElementById("coffeeImage");
+        const qrCode = document.getElementById("qrCode");
+        const message = document.getElementById("message");
+        const tipMessage = document.getElementById("tipMessage");
+        const eventSource = new EventSource("/events");
 
-                coffeeImage.addEventListener('transitionend', () => {
-                    coffeeImage.classList.remove('spin');
-                }, { once: true });
+        eventSource.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          const amountSats = data.amount_sats;
 
-            };
+          message.textContent = `Thanks for the ${amountSats} satoshis!`;
+          qrCode.classList.add("hidden");
+          tipMessage.classList.add("hidden");
+          coffeeImage.classList.add("spin");
 
-            // coffeeImage.addEventListener('click', () => {
-            //     console.log('click')
-            //     coffeeImage.classList.add('spin');
-
-            //     coffeeImage.addEventListener('transitionend', () => {
-            //         coffeeImage.classList.remove('spin');
-            //     }, { once: true });
-
-            // })
-        });
+          // Remove the spin class after the animation ends and revert back to QR code
+          coffeeImage.addEventListener(
+            "animationend",
+            () => {
+              coffeeImage.classList.remove("spin");
+              setTimeout(() => {
+                message.textContent = "";
+                qrCode.classList.remove("hidden");
+                tipMessage.classList.remove("hidden");
+              }, 2000); // Match spin animation duration (4 seconds)
+            },
+            { once: true }
+          );
+        };
+      });
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="output">
-        <img id="coffeeImage" src="Red_Bicycle_Coffee.png" alt="Coffee">
-        <p>Spin me at <%= lnAddress %></p>
+      <img id="coffeeImage" src="Red_Bicycle_Coffee.png" alt="Coffee" />
+      <p id="tipMessage">Tips are appreciated!</p>
+      <img
+        id="qrCode"
+        src="https://api.qrserver.com/v1/create-qr-code/?data=<%= encodeURIComponent(lnAddress) %>&size=150x150"
+        alt="Lightning Address QR Code"
+      />
+      <p id="message"></p>
     </div>
-</body>
+  </body>
 </html>
