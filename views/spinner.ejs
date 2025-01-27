@@ -70,7 +70,7 @@
           const data = JSON.parse(event.data);
           const amountSats = data.amount_sats;
 
-          message.textContent = `Thanks for the ${amountSats} satoshis!`;
+          message.textContent = `Thanks for the ${amountSats} satoshis with message: ${memo}`;
           qrCode.classList.add("hidden");
           tipMessage.classList.add("hidden");
           coffeeImage.classList.add("spin");

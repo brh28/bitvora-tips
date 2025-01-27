@@ -9,6 +9,7 @@ Simple WebApp that listens for a tip and triggers an animation.
 cp sample.env .env
 ```
 and modify values accordingly.
+
 4. With reverse proxy running (see link in step 1 if using ngrok), run the server:
 ```
 npm run start
