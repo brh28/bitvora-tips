@@ -64,18 +64,51 @@
         const qrCode = document.getElementById("qrCode");
         const message = document.getElementById("message");
         const tipMessage = document.getElementById("tipMessage");
+        const topTipsList = document.getElementById("topTips");
+
+        // Function to fetch and update top transactions
+        const fetchTopTransactions = async () => {
+          try {
+            const response = await fetch("/top-transactions");
+            const data = await response.json();
+            console.log("Top transactions:", data.data);
+            updateTopTransactions(data.data);
+          } catch (error) {
+            console.error("Error fetching top transactions:", error);
+          }
+        };
+
+        // Function to update top transactions list
+        const updateTopTransactions = (transactions) => {
+          topTipsList.innerHTML = "";
+          transactions.forEach((tx, index) => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `#${index + 1}: ${tx.amount_sats} satoshis`;
+            topTipsList.appendChild(listItem);
+          });
+        };
+
+        // Load top transactions on page load
+        fetchTopTransactions();
+
+        // Set up SSE (Server-Sent Events)
         const eventSource = new EventSource("/events");
 
         eventSource.onmessage = (event) => {
           const data = JSON.parse(event.data);
           const amountSats = data.amount_sats;
+          const topTransactions = data.topTransactions;
 
+          // Display thanks message
           message.textContent = `Thanks for the ${amountSats} satoshis!`;
           qrCode.classList.add("hidden");
           tipMessage.classList.add("hidden");
           coffeeImage.classList.add("spin");
 
-          // Remove the spin class after the animation ends and revert back to QR code
+          // Update the top transactions list
+          updateTopTransactions(topTransactions);
+
+          // Remove spin class after animation and revert back
           coffeeImage.addEventListener(
             "animationend",
             () => {
@@ -84,7 +117,7 @@
                 message.textContent = "";
                 qrCode.classList.remove("hidden");
                 tipMessage.classList.remove("hidden");
-              }, 2000); // Match spin animation duration (4 seconds)
+              }, 4000);
             },
             { once: true }
           );
@@ -102,6 +135,10 @@
         alt="Lightning Address QR Code"
       />
       <p id="message"></p>
+
+      <!-- Section for displaying the top 3 biggest tips -->
+      <h3>Top 3 Tips:</h3>
+      <div id="topTips"></div>
     </div>
   </body>
 </html>

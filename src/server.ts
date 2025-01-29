@@ -1,9 +1,12 @@
 import express, { Response } from "express";
 import { config } from "dotenv";
+import { BitvoraClient } from "bitvora";
+import { BitcoinNetwork } from "bitvora/dist/types";
 config();
 
 const app = express();
 const PORT = process.env.PORT;
+const BITVORA_API_KEY = process.env.BITVORA_API_KEY;
 
 app.use(express.json());
 
@@ -13,10 +16,30 @@ app.use(express.static("./assets/images"));
 app.set("view engine", "ejs");
 app.set("views", "./views"); // Folder for EJS templates
 
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
+  const transactions = await fetchTransactions();
+
+  const topTransactions = transactions.data
+    .sort((a, b) => b.amount_sats - a.amount_sats)
+    .slice(0, 3);
+
   res.render("spinner", {
     lnAddress: process.env.LIGHTNING_ADDRESS,
+    topTransactions: topTransactions,
   });
+});
+
+// New route to fetch top transactions on page load
+app.get("/top-transactions", async (req, res) => {
+  const transactions = await fetchTransactions();
+
+  const topTransactions = transactions.data
+    .sort((a, b) => b.amount_sats - a.amount_sats)
+    .slice(0, 3);
+
+  let data = topTransactions;
+
+  res.json({ data });
 });
 
 app.get("/events", (req, res) => {
@@ -35,11 +58,22 @@ app.get("/events", (req, res) => {
   });
 });
 
-app.post("/tip", (req, res) => {
+app.post("/tip", async (req, res) => {
   const { amount_sats } = req.body.data;
 
+  // Fetch transactions from external API
+  const transactions = await fetchTransactions();
+
+  // Sort transactions by amount_sats in descending order and take the top 3
+  const topTransactions = transactions.data
+    .sort((a, b) => b.amount_sats - a.amount_sats)
+    .slice(0, 3);
+
+  // Send updated data to clients
   sseClients.forEach((client: Response) => {
-    client.write(`data: ${JSON.stringify({ amount_sats })}\n\n`);
+    client.write(
+      `data: ${JSON.stringify({ amount_sats, topTransactions })}\n\n`
+    );
   });
 
   res.status(200).send("Tip recorded successfully");
@@ -48,5 +82,10 @@ app.post("/tip", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+const fetchTransactions = async () => {
+  const bitvora = BitvoraClient(BITVORA_API_KEY, BitcoinNetwork.MAINNET);
+  return await bitvora.getTransactions();
+};
 
 export default app;
